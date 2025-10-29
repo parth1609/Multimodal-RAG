@@ -1,0 +1,117 @@
+﻿ 
+
+
+Core Requirements
+1. Data Ingestion and Storage
+* Implement a pipeline to process and store:
+   * Plain text documents
+   * Images (PNG, JPG, JPEG)
+   * PDFs containing text, images, or both
+* Extract meaningful information from images using appropriate vision models or OCR
+* Store all processed data in a vector database (Chroma, Pinecone, Qdrant, or any open-source alternative)
+* Maintain metadata for each document (file type, upload timestamp, source, etc.)
+2. Query Handling
+* Support various query types:
+   * Specific factual questions
+   * Vague or exploratory queries
+   * Cross-modal queries (e.g., "Find documents related to the chart showing sales data")
+* Implement appropriate retrieval strategies for different query types
+* Return relevant context with source attribution
+3. PDF Processing
+* Handle PDFs with:
+   * Pure text content
+   * Pure image content
+   * Mixed text and image content
+* Extract and process images embedded within PDFs
+* Maintain the relationship between text and images from the same document
+4. API Development
+* Create endpoints for:
+   * Document upload and processing
+   * Query execution
+   * Retrieval results with relevance scores
+* Use FastAPI or Flask for the backend
+________________
+
+
+Technical Specifications
+Must Use:
+* Any open-source vector database
+* Any open-source embedding model (e.g., sentence-transformers, OpenAI, etc.)
+* Git for version control
+Evaluation Criteria
+Core Functionality (60%)
+* Successful ingestion of multiple data types
+* Accurate retrieval for different query types
+* Proper handling of multimodal content
+* Working API endpoints
+Code Quality (20%)
+* Clean, readable, and well-documented code
+* Proper error handling and logging
+* Modular design and separation of concerns
+* Meaningful variable and function names
+Technical Implementation (20%)
+* Efficient chunking and embedding strategies
+* Appropriate choice of retrieval methods
+* Scalability considerations
+* Performance optimization
+________________
+
+
+Bonus Points
+Advanced Features:
+* Implement hybrid search (combining dense and sparse retrieval)
+* Add reranking mechanism for improved results
+* Support for query expansion or reformulation
+* Caching mechanism for frequently accessed documents
+* Implement batch processing for multiple documents
+* Add support for additional file formats (DOCX, XLSX, etc.)
+* Create a simple frontend interface for testing
+* Implement conversation memory for multi-turn queries
+* Add document summarization capabilities
+* Include unit tests for critical functions.
+* Make use of guardrails.
+* LLM tracebility
+Performance Optimizations:
+* Async processing for document ingestion
+* Pagination for large result sets
+* Query response time under 2 seconds
+________________
+
+
+Deliverables
+1. GitHub Repository with:
+
+   * Complete source code
+   * README.md with:
+   * Setup instructions
+   * Architecture overview
+   * API documentation
+   * Sample queries and expected outputs
+   * Design decisions and trade-offs
+   * requirements.txt or poetry.lock
+   * .gitignore file
+   2. Sample Dataset:
+
+      * At least 5 text documents
+      * At least 5 images
+      * At least 3 PDFs (with varying content types)
+      3. Demo Video or Documentation:
+
+         * 5-10 minute video walkthrough OR
+         * Detailed documentation showing:
+         * Upload process
+         * Query examples with results
+         * Any challenges faced and solutions
+         4. Optional: Deployed Instance
+
+            * Deploy the API to any free hosting platform (Render, Railway, etc.)
+            * Provide API endpoint for testing
+________________
+ 
+Evaluation Process
+Your submission will be evaluated on:
+            1. Does it work? (Can we run it and test the core features?)
+            2. How well does it handle edge cases?
+            3. Is the code maintainable and scalable?
+            4. Did you go beyond the basic requirements?
+ 

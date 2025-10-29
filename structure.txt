@@ -1,0 +1,7 @@
+Implement a pipeline to process and store:
+- Plain text documents
+- Images (PNG, JPG, JPEG) 
+- PDFs containing text, images, or both
+- Extract meaningful information from images using appropriate vision models or OCR
+- Store all processed data in a vector database (Chroma, Pinecone, Qdrant, or any open-source alternative)
+- Maintain metadata for each document (file type, upload timestamp, source, etc.)
