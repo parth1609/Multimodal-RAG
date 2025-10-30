@@ -104,6 +104,7 @@ async def upload_documents(files: List[UploadFile] = File(...)):
         
         # Process documents
         docs = []
+        errors = []
         for path, name in file_paths:
             ext = os.path.splitext(path)[1].lower()
             
@@ -120,23 +121,33 @@ async def upload_documents(files: List[UploadFile] = File(...)):
                         }
                     )
                     docs.append(doc)
-                else:
+                elif ext in ['.txt', '.pdf']:
                     # Load text/PDF
                     loaded_docs = load_documents([path])
-                    for d in loaded_docs:
-                        d.metadata["source"] = name
-                        d.metadata["upload_timestamp"] = datetime.now().isoformat()
-                    docs.extend(loaded_docs)
+                    if loaded_docs:
+                        for d in loaded_docs:
+                            d.metadata["source"] = name
+                            d.metadata["upload_timestamp"] = datetime.now().isoformat()
+                        docs.extend(loaded_docs)
+                    else:
+                        errors.append(f"{name}: No content could be extracted")
+                else:
+                    errors.append(f"{name}: File type {ext} not supported (use .txt, .pdf, .png, .jpg, .jpeg)")
                 
                 # Clean up temp file
-                os.unlink(path)
+                if os.path.exists(path):
+                    os.unlink(path)
                 
             except Exception as e:
                 logger.error(f"Error processing {name}: {str(e)}")
-                continue
+                errors.append(f"{name}: {str(e)}")
+                # Clean up temp file on error
+                if os.path.exists(path):
+                    os.unlink(path)
         
         if not docs:
-            raise HTTPException(status_code=400, detail="No documents could be processed")
+            error_details = "No documents could be processed. Errors: " + "; ".join(errors) if errors else "No documents could be processed"
+            raise HTTPException(status_code=400, detail=error_details)
         
         # Split and store in vector database
         splits = split_documents(docs)
@@ -145,12 +156,18 @@ async def upload_documents(files: List[UploadFile] = File(...)):
         
         logger.info(f"Successfully processed {len(docs)} documents")
         
-        return {
+        response = {
             "message": "Documents processed successfully",
             "documents_processed": len(docs),
             "chunks_created": len(splits),
             "total_documents": len(processed_docs)
         }
+        
+        if errors:
+            response["errors"] = errors
+            response["message"] = f"Processed {len(docs)} documents with {len(errors)} error(s)"
+        
+        return response
         
     except HTTPException:
         raise

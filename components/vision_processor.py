@@ -12,7 +12,7 @@ def encode_image(image_path):
 
 def process_image_with_vision(image_path: str, api_key: str) -> str:
     """Use Gemini Vision to describe the image."""
-    model = ChatGoogleGenerativeAI(model="gemini-pro-vision", google_api_key=api_key)
+    model = ChatGoogleGenerativeAI(model="gemini-2.5-pro", google_api_key=api_key)
     image_data = encode_image(image_path)
     message = HumanMessage(
         content=[

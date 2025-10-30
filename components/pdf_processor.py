@@ -40,28 +40,33 @@ def extract_images_from_pdf(pdf_path: str, output_dir: str = None) -> List[Image
         reader = PdfReader(pdf_path)
         
         for page_num, page in enumerate(reader.pages):
-            if '/XObject' in page['/Resources']:
-                xObject = page['/Resources']['/XObject'].get_object()
-                
-                for obj in xObject:
-                    if xObject[obj]['/Subtype'] == '/Image':
+            try:
+                if '/Resources' in page and '/XObject' in page['/Resources']:
+                    xObject = page['/Resources']['/XObject'].get_object()
+                    
+                    for obj in xObject:
                         try:
-                            size = (xObject[obj]['/Width'], xObject[obj]['/Height'])
-                            data = xObject[obj].get_data()
-                            
-                            if xObject[obj]['/ColorSpace'] == '/DeviceRGB':
-                                mode = "RGB"
-                            else:
-                                mode = "P"
-                            
-                            image = Image.frombytes(mode, size, data)
-                            images.append(image)
-                            
-                            if output_dir:
-                                os.makedirs(output_dir, exist_ok=True)
-                                image.save(f"{output_dir}/page_{page_num}_img_{len(images)}.png")
+                            if xObject[obj]['/Subtype'] == '/Image':
+                                size = (xObject[obj]['/Width'], xObject[obj]['/Height'])
+                                data = xObject[obj].get_data()
+                                
+                                if xObject[obj]['/ColorSpace'] == '/DeviceRGB':
+                                    mode = "RGB"
+                                else:
+                                    mode = "P"
+                                
+                                image = Image.frombytes(mode, size, data)
+                                images.append(image)
+                                
+                                if output_dir:
+                                    os.makedirs(output_dir, exist_ok=True)
+                                    image.save(f"{output_dir}/page_{page_num}_img_{len(images)}.png")
                         except Exception as e:
-                            print(f"Error extracting image from page {page_num}: {e}")
+                            # Skip this image but continue with others
+                            print(f"Skipping image from page {page_num}: {e}")
+            except Exception as e:
+                # Skip this page but continue with others
+                print(f"Skipping page {page_num}: {e}")
     except Exception as e:
         print(f"Error processing PDF for images: {e}")
     
@@ -102,8 +107,8 @@ def process_pdf_with_mixed_content(pdf_path: str, use_ocr: bool = True) -> List[
     # Extract text
     text_content = extract_text_from_pdf(pdf_path)
     
-    # Check if PDF has meaningful text
-    has_text = len(text_content.strip()) > 50
+    # Check if PDF has meaningful text (lowered threshold from 50 to 10)
+    has_text = len(text_content.strip()) > 10
     
     if has_text:
         # Create document from text
@@ -117,43 +122,56 @@ def process_pdf_with_mixed_content(pdf_path: str, use_ocr: bool = True) -> List[
         )
         documents.append(doc)
     
-    # Extract embedded images
-    embedded_images = extract_images_from_pdf(pdf_path)
+    # Try to extract embedded images (may fail, but shouldn't stop text processing)
+    try:
+        embedded_images = extract_images_from_pdf(pdf_path)
+    except Exception as e:
+        print(f"Warning: Could not extract embedded images: {e}")
+        embedded_images = []
     
     if embedded_images:
         for idx, img in enumerate(embedded_images):
             if use_ocr:
-                # Extract text from image using OCR
-                img_text = pytesseract.image_to_string(img)
-                if img_text.strip():
-                    doc = Document(
-                        page_content=img_text,
-                        metadata={
-                            "source": os.path.basename(pdf_path),
-                            "type": "pdf_image",
-                            "content_type": "image_ocr",
-                            "image_index": idx
-                        }
-                    )
-                    documents.append(doc)
+                try:
+                    # Extract text from image using OCR
+                    img_text = pytesseract.image_to_string(img)
+                    if img_text.strip():
+                        doc = Document(
+                            page_content=img_text,
+                            metadata={
+                                "source": os.path.basename(pdf_path),
+                                "type": "pdf_image",
+                                "content_type": "image_ocr",
+                                "image_index": idx
+                            }
+                        )
+                        documents.append(doc)
+                except Exception as e:
+                    print(f"Warning: Could not OCR image {idx}: {e}")
     
     # If no text and no embedded images, treat as scanned PDF
     if not has_text and not embedded_images:
-        page_images = convert_pdf_to_images(pdf_path)
-        
-        if use_ocr and page_images:
-            for page_num, img in enumerate(page_images):
-                page_text = pytesseract.image_to_string(img)
-                if page_text.strip():
-                    doc = Document(
-                        page_content=page_text,
-                        metadata={
-                            "source": os.path.basename(pdf_path),
-                            "type": "pdf_scanned",
-                            "content_type": "scanned_page",
-                            "page_number": page_num + 1
-                        }
-                    )
-                    documents.append(doc)
+        try:
+            page_images = convert_pdf_to_images(pdf_path)
+            
+            if use_ocr and page_images:
+                for page_num, img in enumerate(page_images):
+                    try:
+                        page_text = pytesseract.image_to_string(img)
+                        if page_text.strip():
+                            doc = Document(
+                                page_content=page_text,
+                                metadata={
+                                    "source": os.path.basename(pdf_path),
+                                    "type": "pdf_scanned",
+                                    "content_type": "scanned_page",
+                                    "page_number": page_num + 1
+                                }
+                            )
+                            documents.append(doc)
+                    except Exception as e:
+                        print(f"Warning: Could not OCR page {page_num + 1}: {e}")
+        except Exception as e:
+            print(f"Warning: Could not convert PDF to images: {e}")
     
     return documents
