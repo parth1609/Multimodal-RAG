@@ -1,4 +1,4 @@
-
+streamlit
 requests
 scikit-learn
 pypdf
@@ -17,3 +17,5 @@ fastapi
 uvicorn
 python-multipart
 pdf2image
+transformers
+torch
