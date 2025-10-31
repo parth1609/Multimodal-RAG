@@ -125,7 +125,7 @@ GROQ_API_KEY=your_groq_api_key_here
 
 1. **Start the API server**
 ```bash
-python api.py
+uvicorn api:app --host 127.0.0.1 --port 8000
 ```
 The API will be available at `http://localhost:8000`
 
